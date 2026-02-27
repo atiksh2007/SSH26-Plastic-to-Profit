@@ -57,6 +57,7 @@ const Marketplace = () => {
   };
 
 const handleMakeOffer = (offerData) => {
+  // Get existing cart items
   const existingCart = JSON.parse(localStorage.getItem('cartItems') || '[]');
 
   const newItem = {
@@ -66,10 +67,13 @@ const handleMakeOffer = (offerData) => {
 
   existingCart.push(newItem);
 
+  // Save updated cart
   localStorage.setItem('cartItems', JSON.stringify(existingCart));
 
+  // Redirect to cart page
   navigate('/cart');
 };
+
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedType('all');

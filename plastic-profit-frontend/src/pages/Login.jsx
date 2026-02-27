@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from "react";
+import { login } from "./api";
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -8,72 +8,41 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
+  if (!email || !password) {
+    setError("Please fill in all fields");
+    return;
+  }
 
-  useEffect(() => {
-  /* global google */
-  google.accounts.id.initialize({
-    client_id: "YOUR_GOOGLE_CLIENT_ID",
-    callback: handleCredentialResponse,
-  });
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
 
-  google.accounts.id.renderButton(
-    document.getElementById("googleBtn"),
-    {
-      theme: "outline",
-      size: "large",
-      width: 300,
+    if (!response.ok) {
+      throw new Error("Invalid credentials");
     }
-  );
-}, []);
 
-const handleCredentialResponse = (response) => {
-  const decoded = JSON.parse(
-    atob(response.credential.split(".")[1])
-  );
+    const data = await response.json();
 
-  const userData = {
-    name: decoded.name,
-    email: decoded.email,
-    image: decoded.picture,
-  };
+    const access_token = data.access_token;
 
-  localStorage.setItem("user", JSON.stringify(userData));
+    // Save token
+    localStorage.setItem("token", access_token);
 
-  navigate("/dashboard");
+    // Redirect after login
+    navigate("/dashboard");
+
+  } catch (err) {
+    setError("Login failed. Check your credentials.");
+    console.error(err);
+  }
 };
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-
-    const user = {
-      email,
-      name: email.split('@')[0],
-      joinDate: new Date().toISOString(),
-      type: isLogin ? 'returning' : 'new'
-    };
-
-    localStorage.setItem('plasticProfitUser', JSON.stringify(user));
-    
-    // Redirect to dashboard
-    navigate('/dashboard');
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-gray-50 to-olive-50">
@@ -192,7 +161,7 @@ const handleCredentialResponse = (response) => {
           </div>
 
           {/* Social Login Buttons */}
-          <div id="googleBtn" className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               className="flex items-center justify-center px-4 py-3 border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:border-olive-600 hover:bg-olive-50 transition-all duration-200"
